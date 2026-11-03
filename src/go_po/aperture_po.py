@@ -131,8 +131,10 @@ def far_field_pattern(
     af: ApertureField,
     theta_deg: np.ndarray,
     obliquity: bool = True,
+    *,
+    normalize: float | None = None,
 ) -> np.ndarray:
-    """由口径场计算 E 面（phi = 0）远场方向图（归一化幅度）。
+    """由口径场计算 E 面（phi = 0）远场方向图。
 
     参数
     ----
@@ -140,6 +142,17 @@ def far_field_pattern(
         观察角（度）。
     obliquity : bool
         是否乘上口径天线的斜度因子 (1 + cosθ) / 2。
+    normalize : float | None
+        显式归一化除数（绝对值）。
+
+        - ``None``（默认）：按本次结果的峰值归一化，**增益信息会被抹掉**——
+          拿这个比较「有变形 / 无变形」永远得到 0 dB。
+        - 传一个数：用它来除，例如传未变形口径的轴向幅度，
+          这样 A/B 两组结果共用同一参考，增益损失才出得来。
+
+        2026-11-03 审查第 6 条：原来这里只有峰值归一化一条路，
+        ``tapered_aperture(phase_error=...)`` 又是唯一带复相位的口径工厂，
+        于是「变形 -> 增益下降」这条路走不通。
     """
     k = 2.0 * np.pi  # 长度以 λ 归一化，故 k = 2π
     th = np.deg2rad(theta_deg)
@@ -155,10 +168,24 @@ def far_field_pattern(
     if obliquity:
         field = field * (1.0 + np.cos(th)) / 2.0
 
-    peak = np.max(np.abs(field))
-    if peak <= 0.0:
-        raise ValueError("远场峰值为零，口径场可能全为零")
-    return np.abs(field) / peak
+    if normalize is None:
+        peak = np.max(np.abs(field))
+        if peak <= 0.0:
+            raise ValueError("远场峰值为零，口径场可能全为零")
+        return np.abs(field) / peak
+
+    if abs(normalize) <= 0.0:
+        raise ValueError("normalize 不能为 0")
+    return np.abs(field) / abs(normalize)
+
+
+def axial_amplitude(af: ApertureField, obliquity: bool = True) -> float:
+    """口径场的轴向（theta=0）远场幅度，用作 ``normalize`` 的参考值。
+
+    口径场带相位扰动时，这个值会随扰动下降——这正是要量的增益损失。
+    """
+    return float(np.abs(far_field_pattern(af, np.array([0.0]), obliquity=obliquity, normalize=1.0))[0])
+
 
 
 def analytic_uniform_circular(radius: float, theta_deg: np.ndarray) -> np.ndarray:
