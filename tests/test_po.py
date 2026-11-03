@@ -62,3 +62,36 @@ def test_explicit_normalisation_scales_result(geo):
     a = far_field_aperture(geo.R, k, _uniform, theta, normalize=ref)
     b = far_field_aperture(geo.R, k, _uniform, theta, normalize=2.0 * ref)
     assert abs(b[0] - a[0] / 2.0) < 1e-9
+
+
+def test_complex_illumination_preserves_power(geo):
+    """纯相位照明不改变总辐射功率（帕塞瓦尔定理）。
+
+    2026-11-03 审查第 2 条：旧版把 illumination 的返回值截成实部，
+    ``cos(phi)`` 相当于给口径加了幅度权重，总辐射功率会掉一大截。
+    这条判据比"峰值是否离开视轴"有力：取实部之后波束照样会偏，
+    但口径功率不可能守恒。
+    """
+    k = 2.0 * np.pi
+    A = 5.0
+    theta = np.radians(np.linspace(0.0, 80.0, 801))
+    weight = np.sin(theta)
+
+    def flat(r):
+        return np.ones_like(r, dtype=complex)
+
+    def phase_only(r):
+        return np.exp(1j * A * (r / geo.R) ** 2)
+
+    norm0 = far_field_aperture(geo.R, k, flat, np.array([0.0]), normalize=1.0)[0]
+    u = np.abs(
+        far_field_aperture(geo.R, k, flat, theta, normalize=norm0, n_rho=120, n_phi=240)
+    )
+    p = np.abs(
+        far_field_aperture(geo.R, k, phase_only, theta, normalize=norm0, n_rho=120, n_phi=240)
+    )
+
+    ratio = float(np.sum(p ** 2 * weight) / np.sum(u ** 2 * weight))
+    assert 0.9 < ratio < 1.1, f"纯相位照明改变了总功率（比值 {ratio:.3f}），说明复场被截成了实部"
+
+

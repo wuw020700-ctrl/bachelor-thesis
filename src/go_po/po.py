@@ -71,9 +71,17 @@ def far_field_aperture(
         when comparing two illuminations (e.g. with and without a central
         blockage) - otherwise the blockage is normalised away and the gain
         loss comes out as 0 dB.
+
+    **复口径场**（2026-11-03 修）：
+        ``illumination`` 可以返回复数，用来带口径相位扰动（变形->相位）。
+        旧版这里写的是 ``dtype=float``，numpy 只发一条 ComplexWarning 就取实部，
+        相位整段丢掉、静默算错。
+
+        注意：带相位扰动时**必须**自己传 ``normalize``（用未扰动口径的视轴和），
+        否则会按扰动后的视轴和归一化，增益损失又变成 0 dB。
     """
     rho, phi_a, dA = build_polar_grid(radius, n_rho, n_phi)
-    amp = np.asarray(illumination(rho), dtype=float) * np.ones_like(rho)
+    amp = np.asarray(illumination(rho), dtype=complex) * np.ones_like(rho, dtype=complex)
 
     theta = np.atleast_1d(np.asarray(theta, dtype=float))
     u = np.sin(theta) * np.cos(phi)
@@ -87,7 +95,8 @@ def far_field_aperture(
     field = np.sum(amp[None, :, :] * np.exp(1j * phase) * dA[None, :, :], axis=(1, 2))
 
     if normalize is None:
-        normalize = float(np.sum(amp * dA))
+        ref = np.sum(amp * dA)
+        normalize = ref if abs(ref) > 0.0 else 1.0
     return field / normalize
 
 
