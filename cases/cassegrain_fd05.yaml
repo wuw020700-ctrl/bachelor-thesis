@@ -1,0 +1,27 @@
+# 对照算例：只改焦径比 F/D = 0.5，其余与 cassegrain_20lambda 相同。
+# 用来演示「改配置不换代码」，也是参数扫描的起点。
+
+case:
+  name: cassegrain_fd05
+  description: 20λ 卡塞格伦天线，F/D=0.5 对照算例
+
+geometry:
+  diameter: 20.0
+  f_over_d: 0.5
+  magnification: 4.0
+  sub_vertex: null
+
+feed:
+  q: 8.0
+  edge_taper_db: -10.0
+
+sampling:
+  n_radial: 26
+  n_azimuth: 72
+  n_rho: 200
+  n_phi: 320
+
+output:
+  directory: data/results
+  tag: cassegrain_fd05
+  figure: false

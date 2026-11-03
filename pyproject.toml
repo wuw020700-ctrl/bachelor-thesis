@@ -1,0 +1,29 @@
+[project]
+name = "antennasim"
+version = "0.1.0"
+description = "天线仿真开源软件集成平台：把 openEMS、自研 GO/PO 与 FEniCSx 串成一条可复现的链路"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy",
+    "scipy",
+    "matplotlib",
+    "pyyaml",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.scripts]
+antennasim = "antennasim.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-ra"
+
+[tool.setuptools]
+# 本项目采用扁平布局：导入根是 src/，其下并列 common / go_po / antennasim 三个包
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

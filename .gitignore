@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Data / results (keep models, ignore large outputs)
+data/results/*
+!data/results/.gitkeep
+
+# Editors / OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
+
+# openEMS / simulation scratch
+*.log
+*.h5
+*.vtu
+
+# 安装包与编译产物：体积大，不进仓库
+work/wsl-pkg/
+work/qt_probe/
+work/dsh-session/
+*.msi
+*.msixbundle
+
+# 缓存与临时文件
+.pytest_cache/
+*.egg-info/
+*.tmp
+*.bak

@@ -1,0 +1,19 @@
+# 数值计算基础
+numpy>=1.26
+scipy>=1.11
+
+# 数据与文件
+h5py>=3.10
+pandas>=2.1
+
+# 可视化
+matplotlib>=3.8
+pyvista>=0.43
+
+# 网格与几何
+meshio>=5.3
+gmsh>=4.12
+
+# 交互分析
+jupyterlab>=4.0
+ipywidgets>=8.1
