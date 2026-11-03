@@ -134,13 +134,18 @@ def load_config(path: str | Path) -> CaseConfig:
     if not name:
         raise ConfigError("配置项 case.name 缺失")
 
-    cfg = CaseConfig(
-        name=str(name),
-        description=str(case.get("description", "")),
-        geometry=GeometryConfig(**_section(raw, "geometry")),
-        feed=FeedConfig(**_section(raw, "feed")),
-        sampling=SamplingConfig(**_section(raw, "sampling")),
-        output=OutputConfig(**_section(raw, "output")),
-    )
+    try:
+        cfg = CaseConfig(
+            name=str(name),
+            description=str(case.get("description", "")),
+            geometry=GeometryConfig(**_section(raw, "geometry")),
+            feed=FeedConfig(**_section(raw, "feed")),
+            sampling=SamplingConfig(**_section(raw, "sampling")),
+            output=OutputConfig(**_section(raw, "output")),
+        )
+    except TypeError as exc:
+        # 多打一个字（比如 feed: {qq: 8}）以前会直接 traceback 出来，
+        # 看起来像程序坏了；统一转成 ConfigError，命令行会报「配置错误」并返回 2。
+        raise ConfigError(f"配置里有无法识别的字段：{exc}") from exc
     cfg.validate()
     return cfg

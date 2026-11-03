@@ -56,3 +56,12 @@ def test_defaults_fill_missing_sections(tmp_path):
     assert isinstance(cfg, CaseConfig)
     assert cfg.geometry.diameter == pytest.approx(20.0)
     assert cfg.sampling.n_rho > 0
+
+
+def test_unknown_key_rejected_as_config_error(tmp_path):
+    """拼错一个键（feed: {qq: 8}）应当报配置错误，而不是抛 TypeError 堆栈。"""
+    p = tmp_path / "typo.yaml"
+    p.write_text("case:\n  name: t\nfeed:\n  qq: 8\n", encoding="utf-8")
+    with pytest.raises(ConfigError, match="无法识别的字段"):
+        load_config(p)
+
