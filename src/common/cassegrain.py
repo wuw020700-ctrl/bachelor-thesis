@@ -98,7 +98,12 @@ class Cassegrain:
 
     @property
     def half_angle_feed(self) -> float:
-        """主面边缘相对馈源的半张角（弧度），由馈源位置算起。"""
+        """馈源到**主面边缘**的直线张角（弧度）。
+
+        ⚠️ 这不是馈源的照射半张角。卡塞格伦的边缘射线要先打到副面，
+        真正的馈源出射半张角要比这个小得多（20λ 算例：这里 72.65°，
+        实际 17.76°）。需要照射角请用 ``go_po.rays.feed_half_angle_for_edge``。
+        """
         dz = self.z_rim_primary - self.z_focus_far
         return float(np.arctan(self.R / dz))
 
@@ -274,7 +279,7 @@ class Cassegrain:
                 f"  主面边缘 z            = {self.z_rim_primary:.6f} λ",
                 f"  系统等效焦距          = {self.system_focal_length:.6f} λ  (f/D = {self.system_focal_length / self.D:.3f})",
                 f"  遮挡面积比            = {self.blocking_ratio * 100:.3f} %",
-                f"  馈源半张角            = {np.degrees(self.half_angle_feed):.3f} °",
+                f"  馈源到主面边缘张角    = {np.degrees(self.half_angle_feed):.3f} °  （不是照射半张角）",
             ]
         )
 
