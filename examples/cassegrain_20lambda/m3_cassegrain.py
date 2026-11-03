@@ -57,12 +57,17 @@ def first_sidelobe_db(pat, theta):
 def aperture_from_rays(geo: Cassegrain, bundle, feed_pattern):
     """把射线结果转成口径幅度分布 A(rho)。
 
-    一阶模型：A = g(theta) / (r1 + r2)。
-    严格做法要跟踪射线管截面积（Jacobian），这里留作后续改进点。
+    口径功率守恒要求 |E_a| = |g| * sqrt(dOmega/dA)。对卡塞格伦，
+    rho = 2*M*F*tan(theta/2)，故 dA/dOmega = (M*F)^2/cos^4(theta/2)，
+
+        A = g(theta) * cos^2(theta/2) / (M*F)
+
+    旧版写 g/(r1+r2) 只在单抛物面上成立（那边 r = F/cos^2(theta/2)）。
     """
     ok = bundle.valid
     rho = bundle.aperture_radius[ok]
-    amp = feed_pattern(bundle.theta[ok]) / (bundle.r1[ok] + bundle.r2[ok])
+    th = bundle.theta[ok]
+    amp = feed_pattern(th) * np.cos(th / 2.0) ** 2 / (geo.M * geo.F)
 
     order = np.argsort(rho)
     rho_s, amp_s = rho[order], amp[order]

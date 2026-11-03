@@ -54,10 +54,21 @@ def _build_geometry(cfg: CaseConfig) -> Cassegrain:
 
 
 def _aperture_from_rays(geo: Cassegrain, bundle, feed_pattern):
-    """把射线结果转成口径幅度分布的一阶模型 A = g(theta)/(r1 + r2)。"""
+    """把射线结果转成口径幅度分布。
+
+    口径平面的功率守恒要求 |E_a| = |g| * sqrt(dOmega/dA)。对卡塞格伦双反射面，
+    口径半径与本几何的关系是 rho = 2*M*F*tan(theta/2)（数值验到 5e-15），
+    于是 dA/dOmega = (M*F)^2 / cos^4(theta/2)，正确幅度是
+
+        A = g(theta) * cos^2(theta/2) / (M*F)
+
+    注意旧版写的是 g/(r1+r2)，那只在**单抛物面**上成立（因为 r = F/cos^2(theta/2)）。
+    双反射面的等效扩散距离是 M*F，不是 r1+r2，2026-11-03 审查确认这里不守恒。
+    """
     ok = bundle.valid
     rho = bundle.aperture_radius[ok]
-    amp = feed_pattern(bundle.theta[ok]) / (bundle.r1[ok] + bundle.r2[ok])
+    th = bundle.theta[ok]
+    amp = feed_pattern(th) * np.cos(th / 2.0) ** 2 / (geo.M * geo.F)
 
     order = np.argsort(rho)
     rho_s, amp_s = rho[order], amp[order]
