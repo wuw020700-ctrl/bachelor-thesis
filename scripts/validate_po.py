@@ -111,7 +111,7 @@ def main() -> int:
     # ---------------- L3: 结构变形 -> 相位误差 -> 增益损失 ----------------
     emit("[L3] 结构变形 -> 口径相位误差 -> 增益损失（Ruze 公式校验）")
     emit("  模型：面板变形 w，口径相位扰动 dphi = 2k w")
-    emit("  Ruze: G/G0 = exp(-sigma_phi^2 / 2)  （复场相干因子）")
+    emit("  Ruze: G/G0 = exp(-sigma_phi^2)，sigma_phi 为相位误差 rms")
     emit()
     emit("  变形 rms (λ)   相位 rms (rad)   数值增益损失 (dB)   Ruze 理论 (dB)")
     emit("  " + "-" * 62)
@@ -152,10 +152,13 @@ def main() -> int:
             mean_ratio = float(np.mean(ratios))
             phi_rms = float(np.mean(phis))
 
-        loss_num = 10.0 * np.log10(max(mean_ratio, 1e-12))
-        # Ruze 公式：复场的相干因子为 exp(-sigma_phi^2 / 2)
-        # （这才是标准形式；写成 exp(-sigma^2) 会高估一倍，实测已验证）
-        loss_ruze = 10.0 * np.log10(np.exp(-(phi_rms**2) / 2.0))
+        # mean_ratio 是**幅度比**（on_axis_gain 返回复振幅的模）。
+        # 增益是功率，功率比 = mean_ratio^2，换算 dB 要用 20log10。
+        # （旧版用 10log10 把幅度比当成功效比，两边少算一半，
+        #   2026-11-03 审查发现——数值与理论用同一个错因子，所以自洽到 0.000 dB。）
+        loss_num = 20.0 * np.log10(max(mean_ratio, 1e-12))
+        # 标准 Ruze：G/G0 = exp(-sigma_phi^2)，sigma_phi 是口径相位误差的 rms（弧度）。
+        loss_ruze = 10.0 * np.log10(np.exp(-(phi_rms**2)))
 
         gain_num_db.append(loss_num)
         gain_ruze_db.append(loss_ruze)
@@ -244,7 +247,10 @@ def main() -> int:
         fh.write("\n".join(lines))
     print(f"\n结论已保存: {txt}")
 
-    return 0 if l1_ok else 1
+    ok = bool(l1_ok) and bool(l3_ok)
+    emit("")
+    emit(f"总判定: {'全部通过' if ok else '有未通过项（见上）'}")
+    return 0 if ok else 1
 
 
 if __name__ == "__main__":
