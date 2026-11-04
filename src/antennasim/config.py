@@ -28,7 +28,13 @@ class GeometryConfig:
 @dataclass(frozen=True)
 class FeedConfig:
     q: float = 8.0
-    edge_taper_db: float = -10.0
+    # 期望的口径边缘锥削（dB），可为 None。
+    #
+    # ⚠️ 它**不参与计算**：边缘锥削是结果，由 q、几何和双反射面的扩散因子共同决定
+    # （q=8、20λ 算例的实际值是约 -1.8 dB，不是 -10 dB）。
+    # 流水线会把实际算出的值跟它比，差超过 1 dB 就告警；
+    # 想真做到某个锥削值，应该去反解 q，而不是在这里写一个数。
+    edge_taper_db: float | None = None
 
 
 @dataclass(frozen=True)

@@ -13,8 +13,7 @@ geometry:
   sub_vertex: null        # 副面顶点位置；null 表示用默认 M*F/(M+1)
 
 feed:
-  q: 8.0                  # 馈源方向图 cos^q(theta)
-  edge_taper_db: -10.0    # 目标边缘照射电平
+  q: 8.0                  # 馈源方向图 cos^q(theta)。边缘锥削是算出来的结果，不在这里设
 
 sampling:
   n_radial: 26            # 射线径向采样数

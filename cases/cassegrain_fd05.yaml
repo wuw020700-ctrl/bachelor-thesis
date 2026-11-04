@@ -13,7 +13,6 @@ geometry:
 
 feed:
   q: 8.0
-  edge_taper_db: -10.0
 
 sampling:
   n_radial: 26

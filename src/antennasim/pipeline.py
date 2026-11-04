@@ -118,6 +118,23 @@ def run_pipeline(
     rho_tab, amp_tab = _aperture_from_rays(geo, bundle, feed)
     block_radius = float(geo.sub_rim()[0])
 
+    # 边缘锥削是**结果**，不是输入：由 q、几何和双反射面的扩散因子共同决定。
+    # 2026-11-03 审查第 3 条：配置里的 edge_taper_db 以前从没被读过，
+    # YAML 写 -10 dB 而实际只有 -1.8 dB，谁也不提。现在把它当诊断量打印出来，
+    # 配置里若写了期望值，差了就告警。
+    taper_db = 20.0 * np.log10(
+        max(abs(float(amp_tab[-1])) / max(abs(float(amp_tab[0])), 1e-12), 1e-12)
+    )
+    say(f"      口径边缘锥削 {taper_db:.2f} dB  (q={cfg.feed.q:g})")
+    if cfg.feed.edge_taper_db is not None:
+        gap = abs(taper_db - float(cfg.feed.edge_taper_db))
+        if gap > 1.0:
+            say(
+                f"      [警告] 配置期望 {float(cfg.feed.edge_taper_db):.1f} dB，"
+                f"实际 {taper_db:.2f} dB，差 {gap:.1f} dB"
+                f"（想要那个值得反解 q，不是写在这儿）"
+            )
+
     # ---------------------------------------------------------- 4 远场
     say("[4/5] 远场积分")
     k = 2.0 * np.pi / geo.lam
