@@ -111,6 +111,7 @@ def po_surface_far_field(
     n_rho: int = 140,
     n_phi: int = 240,
     block_radius: float | None = None,
+    normalize: float | None = None,
 ):
     """Explicit PO surface integral on the parabolic reflector.
 
@@ -121,6 +122,10 @@ def po_surface_far_field(
     block_radius:
         Optional radius of a central blockage (e.g. the sub reflector shadow),
         as seen on the aperture.
+    normalize:
+        Explicit normalisation constant. ``None`` uses the on-axis amplitude
+        of this call (the theta closest to 0). Pass a number to compare two
+        runs - e.g. no-deformation vs deformed - on the same reference.
     """
     rho_max = dish.radius
     rho, phi_a, dA = build_polar_grid(rho_max, n_rho, n_phi)
@@ -171,5 +176,26 @@ def po_surface_far_field(
         out.append(e_far)
 
     e_far = np.array(out)
-    ref = np.abs(e_far[0]).max()
+
+    # 归一化参考：用**轴向**幅度，而不是"传进来的第一个 theta"。
+    # 旧版 ref = abs(e_far[0]).max()，theta[0] ≠ 0 时跨调用不可比（同一个 5° 点，
+    # theta0=0 与 theta0=6° 能差 24 倍），2026-11-03 审查第 9 条。
+    if normalize is None:
+        th_arr = np.atleast_1d(np.asarray(theta, dtype=float))
+        zero_idx = int(np.argmin(np.abs(th_arr)))
+        if abs(th_arr[zero_idx]) <= 1e-12:
+            ref = float(np.abs(e_far[zero_idx]).max())
+        else:
+            # theta 里没有 0：单独补算一次轴向幅度当参考，保证跨调用可比
+            on_axis = po_surface_far_field(
+                dish, k, feed_pattern, np.array([0.0]), phi=phi,
+                feed_polarization=feed_polarization, n_rho=n_rho, n_phi=n_phi,
+                block_radius=block_radius, normalize=1.0,
+            )
+            ref = float(np.abs(on_axis[0]).max())
+    else:
+        ref = float(abs(normalize))
+    if ref <= 0.0:
+        ref = 1.0
     return e_far / ref
+
