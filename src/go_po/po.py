@@ -60,6 +60,7 @@ def far_field_aperture(
     n_rho: int = 220,
     n_phi: int = 360,
     normalize: float | None = None,
+    obliquity: bool = False,
 ):
     """Kirchhoff far field of a circular aperture.
 
@@ -71,6 +72,15 @@ def far_field_aperture(
         when comparing two illuminations (e.g. with and without a central
         blockage) - otherwise the blockage is normalised away and the gain
         loss comes out as 0 dB.
+
+    ``obliquity``
+        是否乘口径远场的斜度因子 ``(1 + cosθ)/2``。默认关——保持与
+        ``analytic_uniform_circular_aperture`` 的口径（纯 Airy）可比。
+
+        2026-11-03 审查第 8 条：这个函数一直没有斜度因子，而
+        ``aperture_po.far_field_pattern`` 一直有，同一口径经两条「PO」通路
+        会给出不同副瓣。小角度可以忽略（10° 只差 0.066 dB），大角度会长
+        （60° 差 2.5 dB）。需要讲后瓣或大角度方向图时把它打开。
 
     **复口径场**（2026-11-03 修）：
         ``illumination`` 可以返回复数，用来带口径相位扰动（变形->相位）。
@@ -93,6 +103,9 @@ def far_field_aperture(
         + v[:, None, None] * np.sin(phi_a)[None, :, :]
     )
     field = np.sum(amp[None, :, :] * np.exp(1j * phase) * dA[None, :, :], axis=(1, 2))
+
+    if obliquity:
+        field = field * (1.0 + np.cos(theta)) / 2.0
 
     if normalize is None:
         ref = np.sum(amp * dA)
